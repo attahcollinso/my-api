@@ -1,0 +1,76 @@
+###
+
+GET http://localhost:3000/users
+
+### 
+
+GET http://localhost:3000/products
+
+###
+
+GET http://localhost:3000/users/68404001316c21525efa5b80
+
+###
+
+GET http://localhost:3000/products/684040dc316c21525efa5b85
+
+###
+
+
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{
+  "name": "John Bull",
+  "email": "johnbull@test.com",
+  "age": "35",    
+  "role": "user1"
+}
+
+
+POST  http://localhost:3000/products
+Content-Type: application/json
+
+{
+  "name": "Jeans",
+  "description": "Mens jeans",
+  "price": "$50",
+  "category": "clothing",
+  "inStock": "yes",
+  "supplier": "paulsmith",
+  "rating": "5"
+}
+
+### 
+
+PUT   http://localhost:3000/users/68404129316c21525efa5b87
+Content-Type: application/json
+
+{
+  "name": "Peter Smith",
+  "email": "petersmith@test.com",
+  "age": "40",    
+  "role": "user1"
+}
+
+###
+PUT    http://localhost:3000/products/68409b813a39de35ebc412ee
+Content-Type: application/json
+
+{
+  "name": "Car",
+  "description": "Mercedeze Benz",
+  "price": "$172",
+  "category": "LE",
+  "inStock": "yes",
+  "supplier": "ANNAMCO",
+  "rating": "5"
+}
+
+### 
+DELETE  http://localhost:3000/users/68404001316c21525efa5b80
+
+### 
+DELETE  http://localhost:3000/products/684040dc316c21525efa5b85
+
+
