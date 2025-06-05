@@ -14,7 +14,7 @@ const swaggerOptions = {
       description: 'API documentation for managing products and users',
     },
     servers: [
-      { url: 'http://localhost:3000' }, // Change to Render URL after deployment
+      { url: 'https://my-api-6pk4.onrender.com' }, // Change to Render URL after deployment
     ],
   },
   apis: ['./routes/*.js'], 
