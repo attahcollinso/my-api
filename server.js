@@ -1,4 +1,3 @@
-require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const app = express();
@@ -13,11 +12,13 @@ const swaggerOptions = {
       version: '1.0.0',
       description: 'API documentation for managing products and users',
     },
-    servers: [
-      { url: 'https://my-api-6pk4.onrender.com' }, // Change to Render URL after deployment
+      servers: [
+      {
+        url: process.env.BASE_URL || 'http://localhost:3000',
+      }
     ],
   },
-  apis: ['./routes/*.js'], 
+  apis: ['./routes/*.js'],
 };
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
