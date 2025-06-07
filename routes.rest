@@ -71,6 +71,6 @@ Content-Type: application/json
 DELETE  http://localhost:3000/users/68404001316c21525efa5b80
 
 ### 
-DELETE  http://localhost:3000/products/684040dc316c21525efa5b85
+DELETE  http://localhost:3000/products/684279918f1faa1e6ac57e6b
 
 

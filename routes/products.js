@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Product = require('../models/product');
 const productSchema = require('../validation/productValidation');
+const ensureAuthenticated = require('../middleware/authMiddleware');
 
 /**
  * @swagger
@@ -10,7 +11,6 @@ const productSchema = require('../validation/productValidation');
  *   description: Product management
  */
 
-//getting all products
 /**
  * @swagger
  * /products:
@@ -22,15 +22,14 @@ const productSchema = require('../validation/productValidation');
  *         description: A list of products
  */
 router.get('/', async (req, res) => {
-    try {
-        const products = await Product.find();
-        res.json(products);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
+  try {
+    const products = await Product.find();
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
 
-//getting one product
 /**
  * @swagger
  * /products/{id}:
@@ -41,7 +40,6 @@ router.get('/', async (req, res) => {
  *       - name: id
  *         in: path
  *         required: true
- *         description: ID of the product
  *         schema:
  *           type: string
  *     responses:
@@ -50,18 +48,18 @@ router.get('/', async (req, res) => {
  *       404:
  *         description: Product not found
  */
-
 router.get('/:id', getProduct, (req, res) => {
-    res.json(res.product);
+  res.json(res.product);
 });
 
-//creating one product
 /**
  * @swagger
  * /products:
  *   post:
  *     summary: Create a new product
  *     tags: [Products]
+ *     security:
+ *       - oauth2: [profile, email]
  *     requestBody:
  *       required: true
  *       content:
@@ -97,37 +95,19 @@ router.get('/:id', getProduct, (req, res) => {
  *       400:
  *         description: Bad request
  */
-router.post('/', async (req, res) => {
+router.post('/', ensureAuthenticated, async (req, res) => {
   try {
-    // Step 1: Validate input
     const { error } = productSchema.validate(req.body);
-    if (error) {
-      return res.status(400).json({ message: error.details[0].message });
-    }
+    if (error) return res.status(400).json({ message: error.details[0].message });
 
-    // Step 2: Create product
-    const product = new Product({
-      name: req.body.name,
-      description: req.body.description,
-      price: req.body.price,
-      inStock: req.body.inStock,
-      category: req.body.category,
-      supplier: req.body.supplier,
-      rating: req.body.rating,
-    });
-
-    // Step 3: Save product
+    const product = new Product(req.body);
     const newProduct = await product.save();
     res.status(201).json(newProduct);
-
   } catch (err) {
-    // Handle unexpected errors
     console.error('Server error:', err);
     res.status(500).json({ message: 'Server error occurred. Please try again later.' });
   }
 });
-
-//updating one product
 
 /**
  * @swagger
@@ -135,11 +115,12 @@ router.post('/', async (req, res) => {
  *   put:
  *     summary: Update a product
  *     tags: [Products]
+ *     security:
+ *       - oauth2: [profile, email]
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
- *         description: Product ID
  *         schema:
  *           type: string
  *     requestBody:
@@ -167,82 +148,63 @@ router.post('/', async (req, res) => {
  *       200:
  *         description: Product updated
  */
-router.put('/:id', async (req, res) => {
+router.put('/:id', ensureAuthenticated, async (req, res) => {
   try {
-    // Step 1: Validate input
     const { error } = productSchema.validate(req.body);
-    if (error) {
-      return res.status(400).json({ message: error.details[0].message });
-    }
+    if (error) return res.status(400).json({ message: error.details[0].message });
 
-    // Step 2: Find and update product
-    const updatedProduct = await Product.findByIdAndUpdate(
-      req.params.id,
-      {
-        name: req.body.name,
-        description: req.body.description,
-        price: req.body.price,
-        inStock: req.body.inStock,
-        category: req.body.category,
-        supplier: req.body.supplier,
-        rating: req.body.rating,
-      },
-      { new: true, runValidators: true }
-    );
+    const updatedProduct = await Product.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
 
-    if (!updatedProduct) {
-      return res.status(404).json({ message: 'Product not found' });
-    }
+    if (!updatedProduct) return res.status(404).json({ message: 'Product not found' });
 
-    // Step 3: Respond with updated product
     res.status(200).json(updatedProduct);
-
   } catch (err) {
     console.error('Server error:', err);
     res.status(500).json({ message: 'Server error occurred. Please try again later.' });
   }
 });
 
-//deleting one product
 /**
  * @swagger
  * /products/{id}:
  *   delete:
  *     summary: Delete a product
  *     tags: [Products]
+ *     security:
+ *       - oauth2: [profile, email]
  *     parameters:
  *       - name: id
  *         in: path
  *         required: true
- *         description: ID of the product
  *         schema:
  *           type: string
  *     responses:
  *       200:
  *         description: Product deleted
  */
-router.delete('/:id', getProduct, async (req, res) => {
-   try {
-        await res.product.deleteOne();
-        res.json({ message: 'Deleted Product' });
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
+router.delete('/:id', ensureAuthenticated, getProduct, async (req, res) => {
+  try {
+    await res.product.deleteOne();
+    res.json({ message: 'Deleted Product' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
 
+// Helper middleware to get a product by ID
 async function getProduct(req, res, next) {
-    let product;
-    try {
-        product = await Product.findById(req.params.id);
-        if (product == null) {
-            return res.status(404).json({ message: 'Cannot find user' });
-        }
-    } catch (err) {
-        return res.status(500).json({ message: err.message });
-    }
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ message: 'Cannot find product' });
+
     res.product = product;
     next();
-    
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
 }
 
 module.exports = router;

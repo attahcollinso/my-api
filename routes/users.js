@@ -2,9 +2,15 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/user');
 const userSchema = require('../validation/userValidation');
+const ensureAuthenticated = require('../middleware/authMiddleware');
 
+/**
+ * @swagger
+ * tags:
+ *   name: Users
+ *   description: User management
+ */
 
-//getting all users
 /**
  * @swagger
  * /users:
@@ -15,17 +21,15 @@ const userSchema = require('../validation/userValidation');
  *       200:
  *         description: List of users
  */
-
 router.get('/', async (req, res) => {
-    try {
-        const users = await User.find();
-        res.json(users);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
+  try {
+    const users = await User.find();
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
 
-//getting one user
 /**
  * @swagger
  * /users/{id}:
@@ -45,18 +49,18 @@ router.get('/', async (req, res) => {
  *       404:
  *         description: User not found
  */
-
 router.get('/:id', getUser, (req, res) => {
-    res.json(res.user);
+  res.json(res.user);
 });
 
-//creating one user
 /**
  * @swagger
  * /users:
  *   post:
  *     summary: Create a new user
  *     tags: [Users]
+ *     security:
+ *       - oauth2: [profile, email]
  *     requestBody:
  *       required: true
  *       content:
@@ -83,40 +87,28 @@ router.get('/:id', getUser, (req, res) => {
  *       400:
  *         description: Bad request
  */
-router.post('/', async (req, res) => {
+router.post('/', ensureAuthenticated, async (req, res) => {
   try {
-    // Step 1: Validate input
     const { error } = userSchema.validate(req.body);
-    if (error) {
-      return res.status(400).json({ message: error.details[0].message });
-    }
+    if (error) return res.status(400).json({ message: error.details[0].message });
 
-    // Step 2: Create user
-    const user = new User({
-      name: req.body.name,
-      email: req.body.email,
-      age: req.body.age,
-      role: req.body.role,
-    });
-
-    // Step 3: Save user
+    const user = new User(req.body);
     const newUser = await user.save();
     res.status(201).json(newUser);
-
   } catch (err) {
-    // Handle any unexpected errors
     console.error('Server error:', err);
     res.status(500).json({ message: 'Server error occurred. Please try again later.' });
   }
 });
 
-//updating one user
 /**
  * @swagger
  * /users/{id}:
  *   put:
  *     summary: Update a user
  *     tags: [Users]
+ *     security:
+ *       - oauth2: [profile, email]
  *     parameters:
  *       - in: path
  *         name: id
@@ -143,46 +135,33 @@ router.post('/', async (req, res) => {
  *       200:
  *         description: User updated
  */
-router.put('/:id', async (req, res) => {
+router.put('/:id', ensureAuthenticated, async (req, res) => {
   try {
-    // Step 1: Validate input
     const { error } = userSchema.validate(req.body);
-    if (error) {
-      return res.status(400).json({ message: error.details[0].message });
-    }
+    if (error) return res.status(400).json({ message: error.details[0].message });
 
-    // Step 2: Find and update user
-    const updatedUser = await User.findByIdAndUpdate(
-      req.params.id,
-      {
-        name: req.body.name,
-        email: req.body.email,
-        age: req.body.age,
-        role: req.body.role,
-      },
-      { new: true, runValidators: true }
-    );
+    const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
 
-    if (!updatedUser) {
-      return res.status(404).json({ message: 'User not found' });
-    }
+    if (!updatedUser) return res.status(404).json({ message: 'User not found' });
 
-    // Step 3: Respond with updated user
     res.status(200).json(updatedUser);
-
   } catch (err) {
     console.error('Server error:', err);
     res.status(500).json({ message: 'Server error occurred. Please try again later.' });
   }
 });
 
-//deleting one user
 /**
  * @swagger
  * /users/{id}:
  *   delete:
  *     summary: Delete a user
  *     tags: [Users]
+ *     security:
+ *       - oauth2: [profile, email]
  *     parameters:
  *       - name: id
  *         in: path
@@ -194,30 +173,25 @@ router.put('/:id', async (req, res) => {
  *       200:
  *         description: User deleted
  */
-
-router.delete('/:id', getUser, async (req, res) => {
-   try {
-        await res.user.deleteOne();
-        res.json({ message: 'Deleted User' });
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
+router.delete('/:id', ensureAuthenticated, getUser, async (req, res) => {
+  try {
+    await res.user.deleteOne();
+    res.json({ message: 'Deleted User' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
 
 async function getUser(req, res, next) {
-    let user;
-    try {
-        user = await User.findById(req.params.id);
-        if (user == null) {
-            return res.status(404).json({ message: 'Cannot find user' });
-        }
-    } catch (err) {
-        return res.status(500).json({ message: err.message });
-    }
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'Cannot find user' });
+
     res.user = user;
     next();
-    
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
 }
-
 
 module.exports = router;

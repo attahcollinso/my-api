@@ -37,7 +37,7 @@ const ProductSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
-    // customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'user' }
+    customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'user' }
 });
 
 module.exports = mongoose.model('Product', ProductSchema);
