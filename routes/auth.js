@@ -4,9 +4,9 @@ const router = express.Router();
 
 // Initiate GitHub authentication
 // routes/auth.js
-router.get('/auth/github',
-  passport.authenticate('github', { scope: ['user:email'] })
-);
+// routes/auth.js
+router.get('/github', passport.authenticate('github', { scope: ['user:email'] }));
+
 
 // Handle GitHub callback and redirect
 router.get('/github/callback', 
