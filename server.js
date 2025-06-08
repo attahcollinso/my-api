@@ -62,9 +62,9 @@ app.use(express.json());
 
 // Session and Passport middleware
 app.use(session({
-  secret: process.env.SESSION_SECRET, // Store this in your .env file
+  secret: process.env.SESSION_SECRET,
   resave: false,
-  saveUninitialized: false
+  saveUninitialized: true
 }));
 
 app.use(passport.initialize());
