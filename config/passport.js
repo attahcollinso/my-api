@@ -1,29 +1,51 @@
+// config/passport.js
 const passport = require('passport');
 const GitHubStrategy = require('passport-github2').Strategy;
-const User = require('../models/user'); // Adjust the path as needed
+const axios = require('axios');
+const User = require('../models/user'); // Adjust the path if needed
 
 passport.use(new GitHubStrategy({
-    clientID: process.env.GITHUB_CLIENT_ID,
-    clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    callbackURL: process.env.GITHUB_CALLBACK_URL
-  },
-  async (accessToken, refreshToken, profile, done) => {
-    try {
-      let user = await User.findOne({ githubId: profile.id });
-      if (!user) {
-        user = await User.create({
-          githubId: profile.id,
-          username: profile.username,
-          email: profile.emails[0].value
-        });
+  clientID: process.env.GITHUB_CLIENT_ID,
+  clientSecret: process.env.GITHUB_CLIENT_SECRET,
+  callbackURL: process.env.GITHUB_CALLBACK_URL,
+  scope: ['user:email']
+},
+async (accessToken, refreshToken, profile, done) => {
+  try {
+    // Try to fetch verified primary email from GitHub API
+    const emailResponse = await axios.get('https://api.github.com/user/emails', {
+      headers: {
+        Authorization: `token ${accessToken}`,
+        'User-Agent': 'my-api'
       }
-      return done(null, user);
-    } catch (err) {
-      return done(err);
-    }
-  }
-));
+    });
 
+    const primaryEmailObj = emailResponse.data.find(email => email.primary && email.verified);
+    const email = primaryEmailObj ? primaryEmailObj.email : null;
+
+    if (!email) {
+      return done(new Error('GitHub account has no verified primary email'));
+    }
+
+    // Check if user exists
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      // Create new user if not found
+      user = await User.create({
+        name: profile.displayName || profile.username,
+        email: email,
+        role: 'user'
+      });
+    }
+
+    return done(null, user);
+  } catch (err) {
+    return done(err);
+  }
+}));
+
+// Passport session handling
 passport.serializeUser((user, done) => {
   done(null, user.id);
 });

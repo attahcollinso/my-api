@@ -1,25 +1,35 @@
 const express = require('express');
-const router = express.Router();
 const passport = require('passport');
+const router = express.Router();
 
 // Initiate GitHub authentication
-router.get('/auth/github',
-  passport.authenticate('github', { scope: ['user:email'] })
-);
+router.get('/github', passport.authenticate('github', { scope: ['user:email'] }));
 
-// Handle callback and redirect
-router.get('/auth/github/callback', 
+// Handle GitHub callback and redirect
+router.get('/github/callback', 
   passport.authenticate('github', { failureRedirect: '/login' }),
   (req, res) => {
     // Successful authentication
-    res.redirect('/');
+    res.redirect('/dashboard');
   }
 );
 
 // Logout route
-router.get('/logout', (req, res) => {
-  req.logout(() => {
-    res.redirect('/');
+/**
+ * @swagger
+ * /auth/logout:
+ *   get:
+ *     summary: Logs the user out and ends session
+ *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: Successfully logged out
+ */
+
+router.get('/logout', (req, res, next) => {
+  req.logout(function(err) {
+    if (err) return next(err);
+    res.redirect('/'); // or send a response if it's an API
   });
 });
 

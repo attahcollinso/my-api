@@ -9,7 +9,8 @@ const swaggerJsdoc = require('swagger-jsdoc');
 const app = express();
 
 // Passport configuration
-require('./config/passport');
+require('./config/passport'); // or wherever your passport file is
+
 
 // Swagger setup with OAuth2
 const swaggerOptions = {
@@ -25,28 +26,25 @@ const swaggerOptions = {
         url: process.env.BASE_URL || 'http://localhost:3000',
       }
     ],
-    components: {
-      securitySchemes: {
-        oauth2: {
-          type: 'oauth2',
-          flows: {
-            authorizationCode: {
-              authorizationUrl: 'https://accounts.google.com/o/oauth2/auth',
-              tokenUrl: 'https://oauth2.googleapis.com/token',
-              scopes: {
-                profile: 'Access your profile information',
-                email: 'Access your email address',
-              }
-            }
+   components: {
+  securitySchemes: {
+    oauth2: {
+      type: 'oauth2',
+      flows: {
+        authorizationCode: {
+          authorizationUrl: 'https://github.com/login/oauth/authorize',
+          tokenUrl: 'https://github.com/login/oauth/access_token',
+          scopes: {
+            'user:email': 'Access your email address'
           }
         }
       }
-    },
-    security: [
-      {
-        oauth2: ['profile', 'email']
-      }
-    ]
+    }
+  }
+},
+security: [{
+  oauth2: ['user:email']
+}]
   },
   apis: ['./routes/*.js'],
 };

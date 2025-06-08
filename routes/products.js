@@ -95,6 +95,12 @@ router.get('/:id', getProduct, (req, res) => {
  *       400:
  *         description: Bad request
  */
+/**
+ * @swagger
+ * security:
+ *   - oauth2: ['user:email']
+ */
+
 router.post('/', ensureAuthenticated, async (req, res) => {
   try {
     const { error } = productSchema.validate(req.body);
@@ -148,6 +154,12 @@ router.post('/', ensureAuthenticated, async (req, res) => {
  *       200:
  *         description: Product updated
  */
+/**
+ * @swagger
+ * security:
+ *   - oauth2: ['user:email']
+ */
+
 router.put('/:id', ensureAuthenticated, async (req, res) => {
   try {
     const { error } = productSchema.validate(req.body);

@@ -87,6 +87,12 @@ router.get('/:id', getUser, (req, res) => {
  *       400:
  *         description: Bad request
  */
+/**
+ * @swagger
+ * security:
+ *   - oauth2: ['user:email']
+ */
+
 router.post('/', ensureAuthenticated, async (req, res) => {
   try {
     const { error } = userSchema.validate(req.body);
@@ -135,6 +141,12 @@ router.post('/', ensureAuthenticated, async (req, res) => {
  *       200:
  *         description: User updated
  */
+/**
+ * @swagger
+ * security:
+ *   - oauth2: ['user:email']
+ */
+
 router.put('/:id', ensureAuthenticated, async (req, res) => {
   try {
     const { error } = userSchema.validate(req.body);
