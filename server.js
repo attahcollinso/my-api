@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const session = require('express-session');
+const MongoStore = require('connect-mongo');
 const passport = require('passport');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
@@ -9,8 +10,7 @@ const swaggerJsdoc = require('swagger-jsdoc');
 const app = express();
 
 // Passport configuration
-require('./config/passport'); // or wherever your passport file is
-
+require('./config/passport');
 
 // Swagger setup with OAuth2
 const swaggerOptions = {
@@ -26,25 +26,25 @@ const swaggerOptions = {
         url: process.env.BASE_URL || 'http://localhost:3000',
       }
     ],
-   components: {
-  securitySchemes: {
-    oauth2: {
-      type: 'oauth2',
-      flows: {
-        authorizationCode: {
-          authorizationUrl: 'https://github.com/login/oauth/authorize',
-          tokenUrl: 'https://github.com/login/oauth/access_token',
-          scopes: {
-            'user:email': 'Access your email address'
+    components: {
+      securitySchemes: {
+        oauth2: {
+          type: 'oauth2',
+          flows: {
+            authorizationCode: {
+              authorizationUrl: 'https://github.com/login/oauth/authorize',
+              tokenUrl: 'https://github.com/login/oauth/access_token',
+              scopes: {
+                'user:email': 'Access your email address'
+              }
+            }
           }
         }
       }
-    }
-  }
-},
-security: [{
-  oauth2: ['user:email']
-}]
+    },
+    security: [{
+      oauth2: ['user:email']
+    }]
   },
   apis: ['./routes/*.js'],
 };
@@ -60,11 +60,15 @@ mongoose.connect(process.env.MONGO_URI)
 // Middleware
 app.use(express.json());
 
-// Session and Passport middleware
+// Session and Passport middleware with MongoDB store
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
-  saveUninitialized: true
+  saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGO_URI,
+    ttl: 14 * 24 * 60 * 60
+  })
 }));
 
 app.use(passport.initialize());
@@ -85,10 +89,9 @@ const authRoutes = require('./routes/auth');
 app.use('/auth', authRoutes);
 
 const dashboardRoutes = require('./routes/dashboard');
-app.use('/', dashboardRoutes); // Or app.use('/dashboard', dashboardRoutes);
+app.use('/', dashboardRoutes);
 
-
-// Global error handling middleware
+// Global error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: 'Internal Server Error' });
