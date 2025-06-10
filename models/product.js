@@ -8,12 +8,12 @@ const ProductSchema = new mongoose.Schema({
     description: {
         type: String,
         required: true,
-        unique: true
+        unique: false
     },
     price: {
         type: String,
         required: true,
-        unique: true
+        unique: false
     },
     inStock: {
         type: Boolean,

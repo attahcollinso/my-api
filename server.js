@@ -9,8 +9,29 @@ const swaggerJsdoc = require('swagger-jsdoc');
 
 const app = express();
 
-// Passport configuration
+// Connect to MongoDB
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("Connected to MongoDB"))
+  .catch(err => console.error(err));
+
+// Middleware to parse JSON
+app.use(express.json());
+
+// Session management (should come before passport)
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGO_URI,
+    ttl: 14 * 24 * 60 * 60 // 14 days
+  })
+}));
+
+// Passport configuration and middleware
 require('./config/passport');
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Swagger setup with OAuth2
 const swaggerOptions = {
@@ -42,9 +63,7 @@ const swaggerOptions = {
         }
       }
     },
-    security: [{
-      oauth2: ['user:email']
-    }]
+    security: [{ oauth2: ['user:email'] }]
   },
   apis: ['./routes/*.js'],
 };
@@ -52,44 +71,16 @@ const swaggerOptions = {
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("Connected to MongoDB"))
-  .catch(err => console.error(err));
-
-// Middleware
-app.use(express.json());
-
-// Session and Passport middleware with MongoDB store
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: process.env.MONGO_URI,
-    ttl: 14 * 24 * 60 * 60
-  })
-}));
-
-app.use(passport.initialize());
-app.use(passport.session());
-
-// Routes
+// Basic welcome route
 app.get('/', (req, res) => {
   res.send('Welcome to the Product & User API. Visit /api-docs for documentation.');
 });
 
-const userRoutes = require('./routes/users');
-app.use('/users', userRoutes);
-
-const productRoutes = require('./routes/products');
-app.use('/products', productRoutes);
-
-const authRoutes = require('./routes/auth');
-app.use('/auth', authRoutes);
-
-const dashboardRoutes = require('./routes/dashboard');
-app.use('/', dashboardRoutes);
+// Routes
+app.use('/users', require('./routes/users'));
+app.use('/products', require('./routes/products'));
+app.use('/auth', require('./routes/auth'));
+app.use('/', require('./routes/dashboard'));
 
 // Global error handler
 app.use((err, req, res, next) => {
