@@ -50,7 +50,7 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: process.env.BASE_URL || 'http://localhost:3000',
+        url: process.env.BASE_URL || 'https://my-api-6pk4.onrender.com',
       }
     ],
     components: {
