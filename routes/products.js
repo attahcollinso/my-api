@@ -1,4 +1,4 @@
-const express = require('express');
+ const express = require('express');
 const router = express.Router();
 const Product = require('../models/product');
 const productSchema = require('../validation/productValidation');
@@ -21,7 +21,7 @@ const ensureAuthenticated = require('../middleware/authMiddleware');
  *       200:
  *         description: A list of products
  */
-router.get('/', ensureAuthenticated, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const products = await Product.find();
     res.json(products);

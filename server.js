@@ -7,12 +7,6 @@ const passport = require('passport');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 
-const ensureAuthenticated = require('./middleware/authMiddleware');
-const userRoutes = require('./routes/users');
-const productRoutes = require('./routes/products');
-const authRoutes = require('./routes/auth');
-const dashboardRoutes = require('./routes/dashboard');
-
 const app = express();
 
 // Connect to MongoDB
@@ -23,7 +17,7 @@ mongoose.connect(process.env.MONGO_URI)
 // Middleware to parse JSON
 app.use(express.json());
 
-// Session management (before passport)
+// Session management (should come before passport)
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
@@ -35,7 +29,6 @@ app.use(session({
 }));
 
 // Passport configuration and middleware
-app.set('trust proxy', 1)
 require('./config/passport');
 app.use(passport.initialize());
 app.use(passport.session());
@@ -51,7 +44,7 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: process.env.BASE_URL || 'https://my-api-6pk4.onrender.com',
+        url: process.env.BASE_URL || 'http://localhost:3000',
       }
     ],
     components: {
@@ -78,16 +71,16 @@ const swaggerOptions = {
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// Public Endpoints
+// Basic welcome route
 app.get('/', (req, res) => {
   res.send('Welcome to the Product & User API. Visit /api-docs for documentation.');
 });
-app.use('/auth', authRoutes);
-app.use('/', dashboardRoutes);
 
-// Protected Endpoints
-app.use('/products', ensureAuthenticated, productRoutes);
-app.use('/users', ensureAuthenticated, userRoutes);
+// Routes
+app.use('/users', require('./routes/users'));
+app.use('/products', require('./routes/products'));
+app.use('/auth', require('./routes/auth'));
+app.use('/', require('./routes/dashboard'));
 
 // Global error handler
 app.use((err, req, res, next) => {

@@ -1,4 +1,3 @@
-// config/passport.js
 const passport = require('passport');
 const GitHubStrategy = require('passport-github2').Strategy;
 const axios = require('axios');
@@ -15,7 +14,7 @@ async (accessToken, refreshToken, profile, done) => {
     // Try to fetch verified primary email from GitHub API
     const emailResponse = await axios.get('https://api.github.com/user/emails', {
       headers: {
-        Authorization: `token ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
         'User-Agent': 'my-api'
       }
     });

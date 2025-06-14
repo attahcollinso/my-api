@@ -1,4 +1,3 @@
-const { toFormData } = require('axios');
 const mongoose = require('mongoose');
 
 const ProductSchema = new mongoose.Schema({
@@ -9,12 +8,12 @@ const ProductSchema = new mongoose.Schema({
     description: {
         type: String,
         required: true,
-        unique: false
+        unique: true
     },
     price: {
         type: String,
         required: true,
-        unique: false
+        unique: true
     },
     inStock: {
         type: Boolean,

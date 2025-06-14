@@ -21,7 +21,7 @@ const ensureAuthenticated = require('../middleware/authMiddleware');
  *       200:
  *         description: List of users
  */
-router.get('/', ensureAuthenticated, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const users = await User.find();
     res.json(users);
